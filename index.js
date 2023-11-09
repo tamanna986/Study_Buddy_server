@@ -85,12 +85,25 @@ async function run() {
       res.send(result)
     })
 
+    // // to get all submitted assignments in all submitted assignment page
+    // app.get('/allSubmittedAssignments', async (req, res) => {
+    //   const cursor = submittedAssignmentCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result)
+    // })
+
+     
     // to get all submitted assignments in all submitted assignment page
-    app.get('/allSubmittedAssignments', async (req, res) => {
-      const cursor = submittedAssignmentCollection.find();
-      const result = await cursor.toArray();
-      res.send(result)
-    })
+app.get('/allSubmittedAssignments', async (req, res) => {
+  const cursor = submittedAssignmentCollection.find({ status: { $ne: 'Confirmed' } });
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
+// Other server code remains unchanged.
+
+
+
 
     // to get assignments by category
     app.get('/assignmentsByCategory', async (req, res) => {
@@ -100,15 +113,10 @@ async function run() {
       res.send(result);
     });
 
+    
 
-    // to get assignments by category
-    app.get('/marks', async (req, res) => {
-      const category = req.query.category;
-      const cursor = marksCollection.find({ category: category });
-      const result = await cursor.toArray();
-      res.send(result);
-    });
 
+ 
 
 
 // to go to dynamic route
@@ -176,6 +184,28 @@ app.post('/submittedAssignments', async (req, res) => {
   const result = await submittedAssignmentCollection.insertOne(newSubmittedAssignment)
   res.send(result);
 })
+
+  //  // to post marks by 
+  //  app.post('/marks', async (req, res) => {
+  //   const newMark = req.body;
+  // // console.log(newSubmittedAssignment)
+  // const result = await marksCollection.insertOne(newMark)
+  // res.send(result);
+  // });
+
+  // to post marks test
+app.post('/marks', async (req, res) => {
+  const newMark = req.body;
+  const result = await marksCollection.insertOne(newMark);
+  // Update the status of the submitted assignment
+  const query = { title: newMark.title, examineeName: newMark.examineeName };
+  const update = { $set: { status: 'Completed' } };
+  await submittedAssignmentCollection.updateOne(query, update);
+  res.send(result);
+});
+
+
+
     // update assignment
 app.put('/update/:id', async(req,res) =>{
   const id = req.params.id;
