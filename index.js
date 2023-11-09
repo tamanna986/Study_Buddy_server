@@ -194,15 +194,32 @@ app.post('/submittedAssignments', async (req, res) => {
   // });
 
   // to post marks test
+// app.post('/marks', async (req, res) => {
+//   const newMark = req.body;
+//   const result = await marksCollection.insertOne(newMark);
+//   // Update the status of the submitted assignment
+//   const query = { title: newMark.title, examineeName: newMark.examineeName };
+//   const update = { $set: { status: 'Completed' } };
+//   await submittedAssignmentCollection.updateOne(query, update);
+//   res.send(result);
+// });
 app.post('/marks', async (req, res) => {
-  const newMark = req.body;
-  const result = await marksCollection.insertOne(newMark);
-  // Update the status of the submitted assignment
-  const query = { title: newMark.title, examineeName: newMark.examineeName };
-  const update = { $set: { status: 'Completed' } };
-  await submittedAssignmentCollection.updateOne(query, update);
-  res.send(result);
+  try {
+    const newMark = req.body;
+    const result = await marksCollection.insertOne(newMark);
+
+    // Update the status of the submitted assignment
+    const query = { title: newMark.title, examineeName: newMark.examineeName };
+    const update = { $set: { status: 'Completed' } };
+    const updateResult = await submittedAssignmentCollection.updateOne(query, update);
+
+    res.send({ result, updateResult });
+  } catch (error) {
+    console.error('An error occurred while updating the status:', error);
+    res.status(500).send({ error: 'An error occurred while updating the status.' });
+  }
 });
+
 
 
 
@@ -257,7 +274,28 @@ app.delete('/allAssignments/:id', async (req, res) => {
 //   res.send(result);
 // });
 
+    //  to make a link for bookings according to a specific email wala user
 
+    app.get('/myAssignment', verifyToken, async(req, res) =>{
+
+      // checking if the users token match with its actual owner or not
+      if(req.query.email !== req.user.email){
+        return  res.status(401).send({message:'unAuthorized'})
+      }
+
+
+    let query = {};
+    
+
+    if(req.query?.email){
+      query = {email: req.query.email}
+    }
+
+    const cursor = submittedAssignmentCollection.find(query);
+    const result = await cursor.toArray();
+    res.send(result);
+    console.log('tokennnn' ,req.cookies.token)
+  })
 
 
 
