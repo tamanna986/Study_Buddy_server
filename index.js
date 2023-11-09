@@ -73,6 +73,7 @@ async function run() {
     const db = client.db('studyBuddy');
     const assignmentCollection = client.db('studyBuddy').collection('assignments')
     const submittedAssignmentCollection = client.db('studyBuddy').collection('submittedAssignments')
+    const marksCollection = client.db('studyBuddy').collection('marks')
 
     
 
@@ -84,6 +85,13 @@ async function run() {
       res.send(result)
     })
 
+    // to get all submitted assignments in all submitted assignment page
+    app.get('/allSubmittedAssignments', async (req, res) => {
+      const cursor = submittedAssignmentCollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+
     // to get assignments by category
     app.get('/assignmentsByCategory', async (req, res) => {
       const category = req.query.category;
@@ -91,6 +99,18 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+
+    // to get assignments by category
+    app.get('/marks', async (req, res) => {
+      const category = req.query.category;
+      const cursor = marksCollection.find({ category: category });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
+
 // to go to dynamic route
     app.get('/allAssignments/:id', async(req,res) =>{
       const id = req.params.id;
@@ -192,6 +212,21 @@ app.delete('/allAssignments/:id', async (req, res) => {
   const result = await assignmentCollection.deleteOne(query);
   res.send(result);
 });
+
+// app.delete('/allAssignments/:id', verifyToken, async (req, res) => {
+//   const id = req.params.id;
+//   const query = { _id: new ObjectId(id) };
+  
+//   const assignment = await assignmentCollection.findOne(query);
+//   if (req.user.email !== assignment.email) {
+  
+//     return res.status(401).send({ message: 'Unauthorized: You do not have permission to delete this assignment' });
+//   }
+
+//   const result = await assignmentCollection.deleteOne(query);
+//   res.send(result);
+// });
+
 
 
 
