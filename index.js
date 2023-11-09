@@ -294,7 +294,7 @@ app.delete('/allAssignments/:id', async (req, res) => {
     const cursor = submittedAssignmentCollection.find(query);
     const result = await cursor.toArray();
     res.send(result);
-    console.log('tokennnn' ,req.cookies.token)
+    // console.log('tokennnn' ,req.cookies.token)
   })
 
 
