@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const port = process.env.PORT || 5000;
@@ -72,15 +72,9 @@ async function run() {
     // await client.connect();
     const db = client.db('studyBuddy');
     const assignmentCollection = client.db('studyBuddy').collection('assignments')
+    const submittedAssignmentCollection = client.db('studyBuddy').collection('submittedAssignments')
 
-    // for adding assignments
-
-    app.post('/assignments', async (req, res) => {
-      const newAssignment = req.body;
-      console.log(newAssignment)
-      const result = await assignmentCollection.insertOne(newAssignment)
-      res.send(result);
-    })
+    
 
 
     // to get all assignments in all assignments page
@@ -97,6 +91,22 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+// to go to dynamic route
+    app.get('/allAssignments/:id', async(req,res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await assignmentCollection.findOne(query);
+      res.send(result)
+    });
+
+  
+        // to go to a specific assignment update route
+        app.get('/update/:id', async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const result = await assignmentCollection.findOne(query);
+          res.send(result);
+      });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
@@ -128,6 +138,52 @@ async function run() {
       // to clear logged users cookie while logging out
       res.clearCookie('token', { maxAge: 0 }).send({ success: true })
     })
+
+// for adding assignments
+
+app.post('/assignments', async (req, res) => {
+  const newAssignment = req.body;
+  console.log(newAssignment)
+  const result = await assignmentCollection.insertOne(newAssignment)
+  res.send(result);
+})
+
+// for adding submitted assignments
+
+app.post('/submittedAssignments', async (req, res) => {
+  const newSubmittedAssignment = req.body;
+  console.log(newSubmittedAssignment)
+  const result = await submittedAssignmentCollection.insertOne(newSubmittedAssignment)
+  res.send(result);
+})
+    // update assignment
+app.put('/update/:id', async(req,res) =>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)}
+  const options = {upsert: true};
+  const updatedAssignment = req.body;
+  const assignment = {
+
+    $set: {
+
+           photo: updatedAssignment.photo,
+           title: updatedAssignment.title,
+           description: updatedAssignment.description,
+           marks: updatedAssignment.marks,
+           category: updatedAssignment.category,
+           dueDate: updatedAssignment.dueDate
+           
+
+
+    }
+
+
+  }
+
+  const result = await assignmentCollection.updateOne(query,assignment,options);
+  res.send(result)
+})
+
 
 
 
