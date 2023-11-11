@@ -14,7 +14,9 @@ require('dotenv').config();
 app.use(cors(
   {
     origin: [
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'https://study-buddy-ce97a.web.app',
+      'https://study-buddy-ce97a.firebaseapp.com'
 
     ],
     credentials: true
@@ -27,13 +29,14 @@ app.use(cookieParser());
 // selfmade middleware
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
+  console.log(32, token)
   if (!token) {
     return res.status(401).send({ message: 'unAuthorized' })
   }
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRETE, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'unAuthorized' })
+      return res.status(401).send({ message: 'unAuthorized to' })
     }
 
     console.log('value in token', decoded)
@@ -85,22 +88,23 @@ async function run() {
       res.send(result)
     })
 
-    // // to get all submitted assignments in all submitted assignment page
-    // app.get('/allSubmittedAssignments', async (req, res) => {
-    //   const cursor = submittedAssignmentCollection.find();
-    //   const result = await cursor.toArray();
-    //   res.send(result)
-    // })
+    // to get all submitted assignments in all submitted assignment page
+    app.get('/allSubmittedAssignments', async (req, res) => {
+      const cursor = submittedAssignmentCollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
 
      
-    // to get all submitted assignments in all submitted assignment page
-app.get('/allSubmittedAssignments', async (req, res) => {
-  const cursor = submittedAssignmentCollection.find({ status: { $ne: 'Confirmed' } });
-  const result = await cursor.toArray();
-  res.send(result);
-});
+//     // to get all submitted assignments in all submitted assignment page
+// app.get('/allSubmittedAssignments', async (req, res) => {
+//   const cursor = submittedAssignmentCollection.find({ status: { $ne: 'Completed' } });
+ 
+//   const result = await cursor.toArray();
+//   res.send(result);
+// });
 
-// Other server code remains unchanged.
+
 
 
 
@@ -141,11 +145,12 @@ app.get('/allSubmittedAssignments', async (req, res) => {
 
 
     //  to generate token using jwt FOR SIGN IN 
-    app.post('/jwt', verifyToken, async (req, res) => {
+    app.post('/jwt', async (req, res) => {
+      console.log("hitting the api")
       const user = req.body;
-      console.log(user);
+      console.log(150,user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETE, { expiresIn: '1h' });
-      console.log(token)
+      console.log(152,token)
       res
         .cookie('token', token, {
           httpOnly: true,
@@ -193,7 +198,7 @@ app.post('/submittedAssignments', async (req, res) => {
   // res.send(result);
   // });
 
-  // to post marks test
+  // to post marks test testtttttt worked
 // app.post('/marks', async (req, res) => {
 //   const newMark = req.body;
 //   const result = await marksCollection.insertOne(newMark);
@@ -203,22 +208,50 @@ app.post('/submittedAssignments', async (req, res) => {
 //   await submittedAssignmentCollection.updateOne(query, update);
 //   res.send(result);
 // });
-app.post('/marks', async (req, res) => {
-  try {
-    const newMark = req.body;
-    const result = await marksCollection.insertOne(newMark);
 
-    // Update the status of the submitted assignment
-    const query = { title: newMark.title, examineeName: newMark.examineeName };
-    const update = { $set: { status: 'Completed' } };
-    const updateResult = await submittedAssignmentCollection.updateOne(query, update);
 
-    res.send({ result, updateResult });
-  } catch (error) {
-    console.error('An error occurred while updating the status:', error);
-    res.status(500).send({ error: 'An error occurred while updating the status.' });
-  }
-});
+// update submitted assignments after submitting marks.
+
+
+
+
+// prvs test for marks 1st try
+// app.post('/marks', async (req, res) => {
+//   try {
+//     const newMark = req.body;
+//     console.log('New Mark:', newMark); // Added for debugging
+
+//     const result = await marksCollection.insertOne(newMark);
+
+//     // Update the status of the submitted assignment
+//     const query = { title: newMark.title, examineeName: newMark.examineeName };
+    
+   
+//     // console.log('Query:', query);
+//     const update = { $set: { status: 'Completed' } };
+
+
+//     // Testing - Log existing document before the update
+//     const existingDocument = await submittedAssignmentCollection.findOne(query);
+//     console.log('Existing Document:', existingDocument);
+
+//     const updateResult = await submittedAssignmentCollection.updateOne(query, update);
+//     // const updateResult = await submittedAssignmentCollection.updateOne( query,update);
+
+//     // Log the update result for debugging
+//     console.log('Update Result:', updateResult);
+
+
+//     res.send({ result, updateResult });
+//   } catch (error) {
+//     console.error('An error occurred while updating the status:', error);
+//     res.status(500).send({ error: 'An error occurred while updating the status.' });
+//   }
+// });
+
+
+
+
 
 
 
@@ -252,6 +285,36 @@ app.put('/update/:id', async(req,res) =>{
 })
 
 
+// for updatinga all submitted assignments after giving marks
+
+app.put('/updateMark/:id', async(req,res) =>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)}
+  const options = {upsert: true};
+  const updatedMark = req.body;
+  const assignment = {
+
+    $set: {
+
+      obtainedMarks: updatedMark.obtainedMarks,
+      feedback: updatedMark.feedback,
+      status: updatedMark.status
+           
+           
+
+
+    }
+
+
+  }
+
+  const result = await submittedAssignmentCollection.updateOne(query,assignment,options);
+  res.send(result)
+})
+
+
+
+
 // to delete data
 app.delete('/allAssignments/:id', async (req, res) => {
   const id = req.params.id;
@@ -260,42 +323,33 @@ app.delete('/allAssignments/:id', async (req, res) => {
   res.send(result);
 });
 
-// app.delete('/allAssignments/:id', verifyToken, async (req, res) => {
-//   const id = req.params.id;
-//   const query = { _id: new ObjectId(id) };
+
+    //  to make a link for my assignments according to a specific email wala user
+    app.get('/myAssignments',verifyToken, async(req, res) =>{
+console.log("this is test")
+console.log(req.user.email,req.query.userEmail )
+
+        // // checking if the users token match with its actual owner or not
+        if(req.query.userEmail !== req.user.email){
+          return  res.status(401).send({message:'unAuthorized'})
+        }
+
+      let query = {};
+      console.log(req.query.userEmail)
+      // console.log("userrr",req.user.email)
+      
   
-//   const assignment = await assignmentCollection.findOne(query);
-//   if (req.user.email !== assignment.email) {
-  
-//     return res.status(401).send({ message: 'Unauthorized: You do not have permission to delete this assignment' });
-//   }
-
-//   const result = await assignmentCollection.deleteOne(query);
-//   res.send(result);
-// });
-
-    //  to make a link for bookings according to a specific email wala user
-
-    app.get('/myAssignment', verifyToken, async(req, res) =>{
-
-      // checking if the users token match with its actual owner or not
-      if(req.query.email !== req.user.email){
-        return  res.status(401).send({message:'unAuthorized'})
+      if(req.query?.userEmail){
+        query = {userEmail: req.query.userEmail}
       }
 
+      const cursor = await submittedAssignmentCollection.find(query).toArray();
+      // const result = await cursor.toArray();
+      res.send(cursor);
+      // console.log('tokennnn' ,req.cookies.token)
+    })
 
-    let query = {};
-    
-
-    if(req.query?.email){
-      query = {email: req.query.email}
-    }
-
-    const cursor = submittedAssignmentCollection.find(query);
-    const result = await cursor.toArray();
-    res.send(result);
-    // console.log('tokennnn' ,req.cookies.token)
-  })
+  
 
 
 
