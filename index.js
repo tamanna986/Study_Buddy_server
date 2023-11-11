@@ -83,10 +83,25 @@ async function run() {
 
     // to get all assignments in all assignments page
     app.get('/allAssignments', async (req, res) => {
-      const cursor = assignmentCollection.find();
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
+      const cursor = assignmentCollection.find()
+      .skip(page * size)
+      .limit(size)
+      
       const result = await cursor.toArray();
       res.send(result)
+      // res.send(cursor)
     })
+
+
+        //to get count for all assignment pages
+        app.get('/allAssignmentCollection', async(req,res) =>{
+          const count = await assignmentCollection.estimatedDocumentCount();
+          res.send({count});
+    
+          
+        })
 
     // to get all submitted assignments in all submitted assignment page
     app.get('/allSubmittedAssignments', async (req, res) => {
@@ -180,6 +195,8 @@ app.post('/assignments', async (req, res) => {
   const result = await assignmentCollection.insertOne(newAssignment)
   res.send(result);
 })
+
+
 
 // for adding submitted assignments
 
