@@ -14,10 +14,11 @@ require('dotenv').config();
 app.use(cors(
   {
     origin: [
-      'http://localhost:5173',
+      // 'http://localhost:5173',
+      
       'https://study-buddy-ce97a.web.app',
       'https://study-buddy-ce97a.firebaseapp.com'
-
+      
     ],
     credentials: true
   }
